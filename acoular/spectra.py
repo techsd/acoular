@@ -70,8 +70,8 @@ class BaseSpectra(ABCHasStrictTraits):
     Base class for handling spectral data in Acoular.
 
     This class defines the basic structure and functionality for computing and managing spectral
-    data derived from time-domain signals. It includes properties for configuring the FFT, overlap,
-    and other parameters critical for spectral analysis.
+    data derived from time-domain signals. It includes properties for configuring the Fast Fourier
+    Transformation (FFT), including overlap, and other parameters critical for spectral analysis.
     """
 
     #: Data source; an instance of :class:`~acoular.base.SamplesGenerator` or derived object.
@@ -146,7 +146,7 @@ class BaseSpectra(ABCHasStrictTraits):
 
         Returns
         -------
-        ndarray or None
+        :obj:`numpy.ndarray` or None
             Array of shape ``(`` :attr:`block_size` ``/ 2 + 1,)`` containing the sample frequencies.
             If :attr:`source` is not set, returns ``None``.
 
@@ -367,7 +367,7 @@ class PowerSpectra(BaseSpectra):
 
         Returns
         -------
-        ndarray
+        :obj:`numpy.ndarray`
             The computed cross spectral matrix as an array of shape ``(n, m, m)`` of complex values
             for ``n`` frequencies and ``m`` channels as in :attr:`~BaseSpectra.num_channels`.
 
@@ -413,13 +413,13 @@ class PowerSpectra(BaseSpectra):
 
         Returns
         -------
-        tuple of ndarray
+        tuple of :obj:`numpy.ndarray`
             A tuple containing:
-                - :attr:`eva` (ndarray): Eigenvalues as a 2D array of shape ``(n, m)``, where ``n``
-                  is the number of frequencies and ``m`` is the number of channels. The datatype
-                  depends on the precision.
-                - :attr:`eve` (ndarray): Eigenvectors as a 3D array of shape ``(n, m, m)``. The
-                  datatype is consistent with the precision of the input data.
+                - :attr:`eva` (:obj:`numpy.ndarray`): Eigenvalues as a 2D array of shape ``(n, m)``,
+                  where ``n`` is the number of frequencies and ``m`` is the number of channels. The
+                  datatype depends on the precision.
+                - :attr:`eve` (:obj:`numpy.ndarray`): Eigenvectors as a 3D array of shape
+                  ``(n, m, m)``. The datatype is consistent with the precision of the input data.
 
         Notes
         -----
@@ -461,7 +461,7 @@ class PowerSpectra(BaseSpectra):
 
         Returns
         -------
-        ndarray
+        :obj:`numpy.ndarray`
             A 2D array of shape ``(n, m)`` containing the eigenvalues for ``n`` frequencies and
             ``m`` channels. The datatype depends on :attr:`~BaseSpectra.precision` (``'float64'``
             for ``complex128`` precision and ``'float32'`` for ``complex64`` precision).
@@ -480,7 +480,7 @@ class PowerSpectra(BaseSpectra):
 
         Returns
         -------
-        ndarray
+        :obj:`numpy.ndarray`
             A 3D array of shape ``(n, m, m)`` containing the eigenvectors for ``n`` frequencies and
             ``m`` channels. Each slice ``eve[f]`` represents an ``(m, m)`` matrix of eigenvectors
             for frequency ``f``. The datatype matches the :attr:`~BaseSpectra.precision` of the CSM
@@ -557,9 +557,9 @@ class PowerSpectra(BaseSpectra):
         Retrieve synthetic eigenvalues for a specified frequency or frequency range.
 
         This method calculates the eigenvalues of the CSM for a single frequency or a synthetic
-        frequency range. If :attr:`num` is set to ``0``, it retrieves the eigenvalues at the exact
-        frequency. Otherwise, it averages eigenvalues across a range determined by :attr:`freq` and
-        :attr:`num`.
+        frequency range. If ``num`` is set to ``0``, it retrieves the eigenvalues at the exact
+        frequency. Otherwise, it averages eigenvalues across a range determined by ``freq`` and
+        ``num``.
 
         Parameters
         ----------
@@ -568,12 +568,24 @@ class PowerSpectra(BaseSpectra):
             frequency for synthetic averaging.
         num : int, optional
             The number of subdivisions in the logarithmic frequency space around the center
-            frequency :attr:`freq`. If ``num == 0``, only the eigenvalues for the exact frequency
-            line are returned. Default is ``0``.
+            frequency ``freq``.
+                - ``0``: Only the eigenvalues for the exact frequency line are returned.
+                - Non-zero:
+
+            ===  =====================
+            num  frequency band width
+            ===  =====================
+            0    single frequency line
+            1    octave band
+            3    third-octave band
+            n    1/n-octave band
+            ===  =====================
+
+                - Default is ``0``.
 
         Returns
         -------
-        ndarray
+        :obj:`numpy.ndarray`
             An array of eigenvalues. If ``num == 0``, the eigenvalues for the single frequency are
             returned. For ``num > 0``, a summed array of eigenvalues across the synthetic frequency
             range is returned.
@@ -629,8 +641,8 @@ def synthetic(data, freqs, f, num=3):
     num : int, optional
         Determines the averaging mode:
             - ``0``: Return values for exact discrete frequencies.
-            - Non-zero: Perform averaging over fractional octave bands with :attr:`num` subdivisions
-              per octave.
+            - Non-zero: Perform averaging over fractional octave bands with ``num`` subdivisions per
+              octave.
 
         ===  =====================
         num  frequency band width
@@ -645,7 +657,7 @@ def synthetic(data, freqs, f, num=3):
 
     Returns
     -------
-    ndarray
+    :obj:`numpy.ndarray`
         Synthesized frequency band values of the beamforming result at each grid point (the sum of
         all values that are contained in the band). Note that the frequency resolution and therefore
         the bandwidth represented by a single frequency line depends on the
@@ -655,7 +667,7 @@ def synthetic(data, freqs, f, num=3):
     Notes
     -----
     - The method uses logarithmic spacing to define fractional octave bands.
-    - The :meth:`numpy.searchsorted` method is used to locate frequencies in the ``freqs`` array.
+    - The :func:`numpy.searchsorted` method is used to locate frequencies in the ``freqs`` array.
     - Fractional octave bands are defined using the geometric mean with ``2^(±0.5/num)``.
 
     Examples
@@ -829,7 +841,7 @@ class PowerSpectraImport(PowerSpectra):
 
         Returns
         -------
-        ndarray
+        :obj:`numpy.ndarray`
             Array containing the frequencies.
         """
         if isinstance(self.frequencies, float):
