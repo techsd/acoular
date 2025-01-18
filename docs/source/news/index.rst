@@ -22,6 +22,7 @@ Upcoming Release (25.01)
     **Documentation**
         * adds guide on how to submit a pull request
         * adds intersphinx extension to cross-link documentation from other projects
+        * adds new docstrings to trajectory.py
 
     **Tests**
         * tests now consequently use `pytest` framework instead of `unittest`
