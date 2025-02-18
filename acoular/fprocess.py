@@ -11,6 +11,7 @@
     AutoPowerSpectra
     CrossPowerSpectra
     FFTSpectra
+    DynamicSoundProcessor
 """
 
 from warnings import warn
@@ -374,3 +375,57 @@ class FFTSpectra(RFFT):
             DeprecationWarning,
             stacklevel=2,
         )
+
+
+class DynamicSoundProcessor(SpectraOut):
+    """Processes dynamic changes in the acoustic environment."""
+
+    #: Data source; :class:`~acoular.base.SpectraGenerator` or derived object.
+    source = Instance(SpectraGenerator)
+
+    #: The floating-number-precision of entries, corresponding to numpy dtypes. Default is 64 bit.
+    precision = Enum('float64', 'float32', desc='floating-number-precision')
+
+    # internal identifier
+    digest = Property(depends_on=['source.digest', 'precision'])
+
+    @cached_property
+    def _get_digest(self):
+        return digest(self)
+
+    def detect_dynamic_changes(self, data):
+        """Detect dynamic changes in the acoustic environment.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            The input data to analyze.
+
+        Returns
+        -------
+        changes : list
+            A list of detected dynamic changes in the acoustic environment.
+        """
+        changes = []
+        # Implement detection logic here
+        return changes
+
+    def result(self, num=1):
+        """Python generator that yields the processed output block-wise.
+
+        Parameters
+        ----------
+        num : integer
+            This parameter defines the number of snapshots within each output data block.
+
+        Yields
+        ------
+        numpy.ndarray
+            Yields blocks of shape (num, num_channels * num_freqs).
+            The last block may be shorter than num.
+
+        """
+        for temp in self.source.result(num):
+            changes = self.detect_dynamic_changes(temp)
+            # Process the detected changes if needed
+            yield temp

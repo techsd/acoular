@@ -14,6 +14,7 @@
     FiltWNoiseGenerator
     SineGenerator
     GenericSignalGenerator
+    DynamicSignalGenerator
 
 """
 
@@ -266,7 +267,7 @@ class SineGenerator(PeriodicSignalGenerator):
     """Sine signal generator with adjustable amplitude, frequency and phase."""
 
     # internal identifier
-    digest = Property(depends_on=['num_samples', 'sample_freq', 'amplitude', 'freq', 'phase'])
+    digest = Property(depends_on(['num_samples', 'sample_freq', 'amplitude', 'freq', 'phase']))
 
     @cached_property
     def _get_digest(self):
@@ -376,3 +377,61 @@ class GenericSignalGenerator(SignalGenerator):
             if res > 0:
                 track[stop * nloops :] = track[:res]
         return self.amplitude * track
+
+
+class DynamicSignalGenerator(SignalGenerator):
+    """Generate dynamic sound signals for detecting changes in the acoustic environment.
+
+    This class can be used to generate dynamic sound signals that simulate changes in the acoustic
+    environment. It can be used to test the dynamic sound detection capabilities of the system.
+
+    Example
+    -------
+    >>> from acoular import DynamicSignalGenerator
+    >>> dsg = DynamicSignalGenerator(sample_freq=51200, num_samples=1024)
+    >>> signal = dsg.signal()
+    """
+
+    #: Sampling frequency of the signal.
+    sample_freq = Float(1.0, desc='sampling frequency')
+
+    #: Number of samples to generate.
+    num_samples = CInt
+
+    #: Amplitude of the signal. Defaults to 1.0.
+    amplitude = Float(1.0)
+
+    #: Frequency of the signal, float, defaults to 1000.0.
+    freq = Float(1000.0, desc='Frequency')
+
+    #: Phase of the signal (in radians), float, defaults to 0.0.
+    phase = Float(0.0, desc='Phase')
+
+    #: RMS amplitude of the noise signal.
+    rms = Float(1.0, desc='rms amplitude')
+
+    #: Seed for random number generator, defaults to 0.
+    #: This parameter should be set differently for different instances
+    #: to guarantee statistically independent (non-correlated) outputs.
+    seed = Int(0, desc='random seed value')
+
+    # internal identifier
+    digest = Property(depends_on=['sample_freq', 'num_samples', 'amplitude', 'freq', 'phase', 'rms', 'seed'])
+
+    @cached_property
+    def _get_digest(self):
+        return digest(self)
+
+    def signal(self):
+        """Deliver the dynamic sound signal.
+
+        Returns
+        -------
+        array of floats
+            The resulting signal as an array of length :attr:`~DynamicSignalGenerator.num_samples`.
+        """
+        t = arange(self.num_samples, dtype=float) / self.sample_freq
+        sine_wave = self.amplitude * sin(2 * pi * self.freq * t + self.phase)
+        rnd_gen = RandomState(self.seed)
+        noise = self.rms * rnd_gen.standard_normal(self.num_samples)
+        return sine_wave + noise
