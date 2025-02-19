@@ -96,3 +96,82 @@ Optional dependencies:
 - **.env**: Environment variables for the project.
 - **Dockerfile**: Docker configuration for containerizing the project.
 - **docker-compose.yml**: Docker Compose configuration for multi-container applications.
+
+## Overall Architecture
+
+The Acoular library is designed with a modular architecture, allowing for flexible and efficient processing of acoustic data. The main components of the library include:
+
+- **Signal Processing Blocks**: These are the core components that perform various signal processing tasks. They are implemented in the `acoular/base.py`, `acoular/fprocess.py`, `acoular/process.py`, and other related files.
+- **Beamforming Algorithms**: These algorithms are used to generate acoustic maps from microphone array data. They are implemented in the `acoular/fbeamform.py` and `acoular/tbeamform.py` files.
+- **Data Handling**: This includes classes and functions for reading, writing, and managing data. They are implemented in the `acoular/h5files.py`, `acoular/h5cache.py`, and other related files.
+- **Utilities**: These are helper functions and classes that support the main components. They are implemented in the `acoular/tools/` directory.
+
+## Main Components and Their Interactions
+
+### Signal Processing Blocks
+
+The signal processing blocks are the building blocks of the Acoular library. They are responsible for generating, processing, and analyzing acoustic signals. The main classes include:
+
+- **Generator**: Base class for all signal generators.
+- **SamplesGenerator**: Generates multi-channel time domain signals.
+- **SpectraGenerator**: Generates multi-channel frequency domain signals.
+- **InOut**: Base class for blocks that receive and return signals in the same domain.
+- **TimeOut**: Processes data from any source and returns time domain signals.
+- **SpectraOut**: Processes data from any source and returns frequency domain signals.
+
+### Beamforming Algorithms
+
+The beamforming algorithms are used to create acoustic maps from microphone array data. The main classes include:
+
+- **BeamformerBase**: Base class for all beamforming algorithms.
+- **BeamformerCapon**: Implements the Capon beamforming algorithm.
+- **BeamformerClean**: Implements the Clean beamforming algorithm.
+- **BeamformerFunctional**: Implements functional beamforming.
+- **BeamformerMusic**: Implements the MUSIC beamforming algorithm.
+- **BeamformerOrth**: Implements orthogonal beamforming.
+- **BeamformerSODIX**: Implements the SODIX beamforming algorithm.
+
+### Data Handling
+
+The data handling components are responsible for reading, writing, and managing data. The main classes include:
+
+- **H5File**: Handles reading and writing of HDF5 files.
+- **H5Cache**: Manages caching of HDF5 files.
+- **SamplesBuffer**: Buffers time domain samples for processing.
+
+### Utilities
+
+The utility functions and classes support the main components of the Acoular library. They include:
+
+- **Helpers**: Various helper functions for signal processing.
+- **Metrics**: Functions for calculating metrics related to acoustic data.
+- **Utils**: General utility functions for the library.
+
+## Architecture Diagram
+
+```mermaid
+graph TD
+    A[Acoular] --> B[Signal Processing Blocks]
+    A --> C[Beamforming Algorithms]
+    A --> D[Data Handling]
+    A --> E[Utilities]
+    B --> F[Generator]
+    B --> G[SamplesGenerator]
+    B --> H[SpectraGenerator]
+    B --> I[InOut]
+    B --> J[TimeOut]
+    B --> K[SpectraOut]
+    C --> L[BeamformerBase]
+    C --> M[BeamformerCapon]
+    C --> N[BeamformerClean]
+    C --> O[BeamformerFunctional]
+    C --> P[BeamformerMusic]
+    C --> Q[BeamformerOrth]
+    C --> R[BeamformerSODIX]
+    D --> S[H5File]
+    D --> T[H5Cache]
+    D --> U[SamplesBuffer]
+    E --> V[Helpers]
+    E --> W[Metrics]
+    E --> X[Utils]
+```
