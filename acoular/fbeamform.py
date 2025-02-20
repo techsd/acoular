@@ -117,6 +117,7 @@ from .internal import digest
 from .microphones import MicGeom
 from .spectra import PowerSpectra
 from .tfastfuncs import _steer_I, _steer_II, _steer_III, _steer_IV
+from .base import DynamicSoundDetector
 
 sklearn_ndict = {}
 if parse(sklearn.__version__) < parse('1.4'):
@@ -192,7 +193,7 @@ class SteeringVector(HasStrictTraits):
         elif len(ref) == 3:
             self._ref = array(ref, dtype=float)
         else:
-            raise TraitError(args=self, name='ref', info='Float or CArray(3,)', value=ref)
+            raise TraitError(args=self, name='ref', info='Float or CArray(3)', value=ref)
 
     def _get_ref(self):
         return self._ref

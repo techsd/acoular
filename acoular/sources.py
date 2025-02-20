@@ -1592,3 +1592,143 @@ class PointSourceConvolve(PointSource):
             kernel=self.kernel,
         )
         yield from time_convolve.result(num)
+
+
+class DynamicSoundSource(SamplesGenerator):
+    """Class to handle dynamic sound sources and detect changes in the acoustic environment."""
+
+    #: Emitted signal, instance of the :class:`~acoular.signals.SignalGenerator` class.
+    signal = Instance(SignalGenerator)
+
+    #: Location of source in (`x`, `y`, `z`) coordinates (left-oriented system).
+    loc = Tuple((0.0, 0.0, 1.0), desc='source location')
+
+    #: Number of channels in output, is set automatically /
+    #: depends on used microphone geometry.
+    num_channels = Delegate('mics', 'num_mics')
+
+    #: :class:`~acoular.microphones.MicGeom` object that provides the microphone locations.
+    mics = Instance(MicGeom, desc='microphone geometry')
+
+    #: :class:`~acoular.environments.Environment` or derived object,
+    #: which provides information about the sound propagation in the medium.
+    env = Instance(Environment(), Environment)
+
+    #: Start time of the signal in seconds, defaults to 0 s.
+    start_t = Float(0.0, desc='signal start time')
+
+    #: Start time of the data acquisition at microphones in seconds,
+    #: defaults to 0 s.
+    start = Float(0.0, desc='sample start time')
+
+    #: Signal behaviour for negative time indices, i.e. if :attr:`start` < :attr:start_t.
+    #: `loop` take values from the end of :attr:`signal.signal()` array.
+    #: `zeros` set source signal to zero, advisable for deterministic signals.
+    #: defaults to `loop`.
+    prepadding = Enum('loop', 'zeros', desc='Behaviour for negative time indices.')
+
+    #: Upsampling factor, internal use, defaults to 16.
+    up = Int(16, desc='upsampling factor')
+
+    #: Number of samples, is set automatically /
+    #: depends on :attr:`signal`.
+    num_samples = Delegate('signal')
+
+    #: Sampling frequency of the signal, is set automatically /
+    #: depends on :attr:`signal`.
+    sample_freq = Delegate('signal')
+
+    # internal identifier
+    digest = Property(
+        depends_on=[
+            'mics.digest',
+            'signal.digest',
+            'loc',
+            'env.digest',
+            'start_t',
+            'start',
+            'up',
+            'prepadding',
+        ],
+    )
+
+    @cached_property
+    def _get_digest(self):
+        return digest(self)
+
+    def detect_changes(self, data):
+        """Detect changes in the acoustic environment.
+
+        Parameters
+        ----------
+        data : numpy.ndarray
+            The input data to analyze.
+
+        Returns
+        -------
+        changes : list
+            A list of detected changes in the acoustic environment.
+        """
+        changes = []
+        # Implement detection logic here
+        return changes
+
+    def result(self, num=128):
+        """Python generator that yields the output at microphones block-wise.
+
+        Parameters
+        ----------
+        num : integer, defaults to 128
+            This parameter defines the size of the blocks to be yielded
+            (i.e. the number of samples per block).
+
+        Returns
+        -------
+        Samples in blocks of shape (num, num_channels).
+            The last block may be shorter than num.
+
+        """
+        self._validate_locations()
+        N = int(ceil(self.num_samples / num))  # number of output blocks
+        signal = self.signal.usignal(self.up)
+        out = empty((num, self.num_channels))
+        # distances
+        rm = self.env._r(array(self.loc).reshape((3, 1)), self.mics.pos).reshape(1, -1)
+        # emission time relative to start_t (in samples) for first sample
+        ind = (-rm / self.env.c - self.start_t + self.start) * self.sample_freq * self.up
+
+        if self.prepadding == 'zeros':
+            # number of blocks where signal behaviour is amended
+            pre = -int(npmin(ind[0]) // (self.up * num))
+            # amend signal for first blocks
+            # if signal stops during prepadding, terminate
+            if pre >= N:
+                for _nb in range(N - 1):
+                    out = _fill_mic_signal_block(out, signal, rm, ind, num, self.num_channels, self.up, True)
+                    yield out
+
+                blocksize = self.num_samples % num or num
+                out = _fill_mic_signal_block(out, signal, rm, ind, blocksize, self.num_channels, self.up, True)
+                yield out[:blocksize]
+                return
+            else:
+                for _nb in range(pre):
+                    out = _fill_mic_signal_block(out, signal, rm, ind, num, self.num_channels, self.up, True)
+                    yield out
+
+        else:
+            pre = 0
+
+        # main generator
+        for _nb in range(N - pre - 1):
+            out = _fill_mic_signal_block(out, signal, rm, ind, num, self.num_channels, self.up, False)
+            changes = self.detect_changes(out)
+            # Process the detected changes if needed
+            yield out
+
+        # last block of variable size
+        blocksize = self.num_samples % num or num
+        out = _fill_mic_signal_block(out, signal, rm, ind, blocksize, self.num_channels, self.up, False)
+        changes = self.detect_changes(out[:blocksize])
+        # Process the detected changes if needed
+        yield out[:blocksize]
